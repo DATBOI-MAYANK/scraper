@@ -8,6 +8,8 @@ import type { Job, JobType } from './data/jobs';
 
 type ApiJob = { sourceKey: string; job: { company?: string; role?: string; location?: string; remote?: boolean; type?: JobType; salaryMin?: number; salaryMax?: number; salaryLabel?: string; applyUrl?: string; description?: string; tags?: string[] } };
 const colours = ['bg-[#c4f0ff]', 'bg-[#ffe39a]', 'bg-[#e4c6ff]', 'bg-[#baf5ce]', 'bg-[#ffb4d0]', 'bg-[#f9c9a5]'];
+// Empty locally: Vite proxies /api to the backend. Set VITE_API_URL on Vercel.
+const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 
 export function App() {
   const app = useRef<HTMLDivElement>(null);
@@ -23,7 +25,7 @@ export function App() {
     const params = new URLSearchParams({ minimumSalary: String(minimumSalary), remoteOnly: String(remoteOnly) });
     if (type !== 'All') params.set('type', type);
     setLoading(true); setError(undefined);
-    fetch(`/api/jobs?${params}`, { signal: controller.signal })
+    fetch(`${apiBaseUrl}/api/jobs?${params}`, { signal: controller.signal })
       .then(async (response) => { if (!response.ok) throw new Error('Could not load jobs'); return response.json() as Promise<{ results: ApiJob[] }>; })
       .then(({ results }) => setJobs(results.map(({ sourceKey, job }, index) => ({ id: sourceKey, company: job.company ?? 'Unknown company', role: job.role ?? 'Untitled role', location: job.location ?? 'Location not provided', remote: Boolean(job.remote), type: job.type ?? 'Full-time', salary: job.salaryMax ?? 0, salaryLabel: job.salaryLabel ?? (job.salaryMax ? `Up to ₹${(job.salaryMax / 100000).toFixed(1)}L` : 'Salary not listed'), tags: job.tags ?? [], applyUrl: job.applyUrl, description: job.description, colour: colours[index % colours.length] })) ))
       .catch((fetchError: Error) => { if (fetchError.name !== 'AbortError') setError(fetchError.message); })

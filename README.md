@@ -32,6 +32,16 @@ Transient BigData and MongoDB failures are retried with exponential backoff (thr
 
 Tune recovery with `SYNC_RETRY_ATTEMPTS` and `SYNC_RETRY_BASE_DELAY_MS`. Invalid credentials, missing documents, and other non-retryable client errors fail fast.
 
+## Deploy: Vercel + Render
+
+Keep this repository layout: `client/` is the Vite frontend and the repository root is the Express backend.
+
+1. Create a Render **Web Service** from this repository. Use build command `npm ci && npm run build` and start command `npm start`.
+2. Add the backend environment variables from `.env.example` in Render. Set `NODE_ENV=production`, and set `CORS_ORIGINS` to your Vercel domain, for example `https://your-app.vercel.app`. Keep the uptime service pointed at `https://your-api.onrender.com/health`.
+3. Create a Vercel project from the same repository and set its Root Directory to `client`. Add `VITE_API_URL=https://your-api.onrender.com` in Vercel's production environment variables, then deploy.
+
+`POST /api/sync` is disabled until `SYNC_API_TOKEN` is set. If enabled, call it only with `Authorization: Bearer <SYNC_API_TOKEN>`; the public frontend does not need this credential.
+
 `GET /api/jobs` is the frontend-facing endpoint. It supports `type`, `minimumSalary`, and `remoteOnly` query parameters; filtering happens in MongoDB, not in the browser.
 
 ## Job identity and changed documents

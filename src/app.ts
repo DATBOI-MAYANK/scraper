@@ -1,4 +1,5 @@
 import express from 'express';
+import { env } from './config/env.js';
 import { errorHandler } from './common/middleware/error-handler.js';
 import { documentRepository } from './modules/documents/document.repository.js';
 import { syncService } from './modules/sync/sync.service.js';
@@ -7,6 +8,19 @@ import { syncHealth } from './modules/sync/sync.health.js';
 export function createApp() {
   const app = express();
   app.use(express.json());
+  const allowedOrigins = new Set(env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean));
+
+  app.use((request, response, next) => {
+    const origin = request.headers.origin;
+    if (origin && allowedOrigins.has(origin)) {
+      response.setHeader('Access-Control-Allow-Origin', origin);
+      response.setHeader('Vary', 'Origin');
+      response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      if (request.method === 'OPTIONS') return response.sendStatus(204);
+    }
+    next();
+  });
 
   app.get('/health', (_request, response) => {
     const sync = syncHealth.get();
@@ -28,7 +42,9 @@ export function createApp() {
       response.json({ results });
     } catch (error) { next(error); }
   });
-  app.post('/api/sync', async (_request, response, next) => {
+  app.post('/api/sync', async (request, response, next) => {
+    // This endpoint is for an authenticated operator, not the public frontend.
+    if (!env.SYNC_API_TOKEN || request.headers.authorization !== `Bearer ${env.SYNC_API_TOKEN}`) return response.sendStatus(404);
     try { response.json(await syncService.syncConnector()); } catch (error) { next(error); }
   });
 
