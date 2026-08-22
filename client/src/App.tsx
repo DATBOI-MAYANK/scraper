@@ -36,10 +36,17 @@ export function App() {
   useLayoutEffect(() => {
     const context = gsap.context(() => {
       gsap.from('.hero-pop', { y: 30, opacity: 0, duration: 0.65, stagger: 0.1, ease: 'power3.out' });
-      gsap.from('.job-card', { y: 28, opacity: 0, duration: 0.5, stagger: 0.08, delay: 0.35, ease: 'back.out(1.3)' });
     }, app);
     return () => context.revert();
   }, []);
+
+  // Job cards appear only after the API response, so animate them after they exist.
+  useEffect(() => {
+    const cards = app.current?.querySelectorAll('.job-card');
+    if (!cards?.length) return;
+    const animation = gsap.from(cards, { y: 28, opacity: 0, duration: 0.5, stagger: 0.08, ease: 'back.out(1.3)' });
+    return () => { animation.kill(); };
+  }, [jobs]);
 
   return <div ref={app} id="home" className="min-h-screen overflow-x-hidden">
     <Navbar />

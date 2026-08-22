@@ -8,7 +8,10 @@ import { syncHealth } from './modules/sync/sync.health.js';
 export function createApp() {
   const app = express();
   app.use(express.json());
-  const allowedOrigins = new Set(env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean));
+  const allowedOrigins = new Set(env.CORS_ORIGINS
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean));
 
   app.use((request, response, next) => {
     const origin = request.headers.origin;
