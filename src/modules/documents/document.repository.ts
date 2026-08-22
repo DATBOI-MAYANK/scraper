@@ -1,6 +1,10 @@
 import { DocumentModel } from './document.model.js';
 
 export const documentRepository = {
+  async isEmpty(): Promise<boolean> {
+    return (await DocumentModel.exists({})) === null;
+  },
+
   async upsert(document: Record<string, unknown>): Promise<void> {
     await DocumentModel.updateOne(
       { sourceKey: document.sourceKey },
